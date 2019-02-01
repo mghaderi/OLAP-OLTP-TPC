@@ -1,0 +1,63 @@
+//clone benchmark project
+git clone https://github.com/robert-s-lee/oltpbench.git
+git checkout "cockroachdb"
+//changing tpcc_config_cockroachdb.xml to:
+<?xml version="1.0"?>
+<parameters>
+
+    <!-- Connection details -->
+    <dbtype>cockroachdb</dbtype>
+    <driver>org.postgresql.Driver</driver>
+    <DBUrl>jdbc:postgresql://127.0.0.1:26257/tpcc?reWriteBatchedInserts=true</DBUrl>
+    <username>root</username>
+    <password></password>
+    <isolation>TRANSACTION_SERIALIZABLE</isolation>
+
+    <!-- Scale factor is the number of warehouses in TPCC -->
+    <scalefactor>2</scalefactor>
+
+    <!-- The workload -->
+    <terminals>2</terminals>
+    <works>
+        <work>
+          <time>14400</time>
+          <rate>10000</rate>
+          <ratelimited bench="tpcc">true</ratelimited>
+          <weights>45,43,4,4,4</weights>
+        </work>
+    </works>
+
+        <!-- TPCC specific -->
+        <transactiontypes>
+        <transactiontype>
+                <name>NewOrder</name>
+        </transactiontype>
+        <transactiontype>
+                <name>Payment</name>
+        </transactiontype>
+        <transactiontype>
+                <name>OrderStatus</name>
+        </transactiontype>
+        <transactiontype>
+                <name>Delivery</name>
+        </transactiontype>
+        <transactiontype>
+                <name>StockLevel</name>
+        </transactiontype>
+        </transactiontypes>
+</parameters>
+
+//
+//make tpcc database in cockroach
+. cockroach.sh --insecure
+create database tpcc;
+
+//
+//use ant to build benchmar
+
+////run benchmark for 14400 seconds and save result every 600 seconds
+./oltpbenchmark -b tpcc -c config/tpcc_config_cockroachdb.xml --create=true --load=true --execute=true -s 600 -o outputfile
+
+//error!! :
+//bench mark was unable to load data to database. It seems that this benchmark tries to add some rows with foreign key that they do not have any reference and postgres does not allow that .
+

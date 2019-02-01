@@ -1,0 +1,205 @@
+//basic code for making POJO
+
+//
+//
+//make .avsc files
+
+//customer.avsc
+{"namespace": "",
+ "type": "record",
+ "name": "Customer",
+ "fields": [
+     {"name": "C_CUSTKEY", "type": "int"},
+     {"name": "C_NAME",  "type": "string"},
+     {"name": "C_ADDRESS", "type": "string"},
+     {"name": "C_NATIONKEY", "type": "int"},
+     {"name": "C_PHONE", "type": "string"},
+     {"name": "C_ACCTBAL", "type": "float"},
+     {"name": "C_MKTSEGMENT", "type": "string"},
+     {"name": "C_COMMENT", "type": "string"}
+ ]
+}
+//lineitem.avsc
+{"namespace": "",
+ "type": "record",
+ "name": "Lineitem",
+ "fields": [
+     {"name": "L_ORDERKEY", "type": "int"},
+     {"name": "L_PARTKEY",  "type": "int"},
+     {"name": "L_SUPPKEY", "type": "int"},
+     {"name": "L_LINENUMBER", "type": "int"},
+     {"name": "L_QUANTITY", "type": "float"},
+     {"name": "L_EXTENDEDPRICE", "type": "float"},
+     {"name": "L_DISCOUNT", "type": "float"},
+     {"name": "L_TAX", "type": "float"},
+     {"name": "L_RETURNFLAG", "type": "string"},
+     {"name": "L_LINESTATUS", "type": "string"},
+     {"name": "L_SHIPDATE", "type": "string"},
+     {"name": "L_COMMITDATE", "type": "string"},
+     {"name": "L_RECEIPTDATE", "type": "string"},
+     {"name": "L_SHIPINSTRUCT", "type": "string"},
+     {"name": "L_SHIPMODE", "type": "string"},
+     {"name": "L_COMMENT", "type": "string"}
+ ]
+}
+//nation.avsc
+{"namespace": "",
+ "type": "record",
+ "name": "Nation",
+ "fields": [
+     {"name": "N_NATIONKEY", "type": "int"},
+     {"name": "N_NAME",  "type": "string"},
+     {"name": "N_REGIONKEY", "type": "int"},
+     {"name": "N_COMMENT", "type": "string"}
+ ]
+}
+//orders.avsc
+{"namespace": "",
+ "type": "record",
+ "name": "Orders",
+ "fields": [
+     {"name": "O_ORDERKEY", "type": "int"},
+     {"name": "O_CUSTKEY",  "type": "int"},
+     {"name": "O_ORDERSTATUS", "type": "string"},
+     {"name": "O_TOTALPRICE", "type": "float"},
+     {"name": "O_ORDERDATE", "type": "string"},
+     {"name": "O_ORDERPRIORITY", "type": "string"},
+     {"name": "O_CLERK", "type": "string"},
+     {"name": "O_SHIPPRIORITY", "type": "int"},
+     {"name": "O_COMMENT", "type": "string"}
+ ]
+}
+//part.avsc
+{"namespace": "",
+ "type": "record",
+ "name": "Part",
+ "fields": [
+     {"name": "P_PARTKEY", "type": "int"},
+     {"name": "P_NAME",  "type": "string"},
+     {"name": "P_MFGR", "type": "string"},
+     {"name": "P_BRAND", "type": "string"},
+     {"name": "P_TYPE", "type": "string"},
+     {"name": "P_SIZE", "type": "int"},
+     {"name": "P_CONTAINER", "type": "string"},
+     {"name": "P_RETAILPRICE", "type": "float"},
+     {"name": "P_COMMENT", "type": "string"}
+ ]
+}
+//partsupp.avsc
+{"namespace": "",
+ "type": "record",
+ "name": "Partsupp",
+ "fields": [
+     {"name": "PS_PARTKEY", "type": "int"},
+     {"name": "PS_SUPPKEY",  "type": "int"},
+     {"name": "PS_AVAILQTY", "type": "int"},
+     {"name": "PS_SUPPLYCOST", "type": "float"},
+     {"name": "PS_COMMENT", "type": "string"}
+ ]
+}
+//region.avsc
+{"namespace": "",
+ "type": "record",
+ "name": "Region",
+ "fields": [
+     {"name": "R_REGIONKEY", "type": "int"},
+     {"name": "R_NAME",  "type": "string"},
+     {"name": "R_COMMENT", "type": "string"}
+ ]
+}
+//supplier.avsc
+{"namespace": "",
+ "type": "record",
+ "name": "Supplier",
+ "fields": [
+     {"name": "S_SUPPKEY", "type": "int"},
+     {"name": "S_NAME",  "type": "string"},
+     {"name": "S_ADDRESS", "type": "string"},
+     {"name": "S_NATIONKEY", "type": "int"},
+     {"name": "S_PHONE", "type": "string"},
+     {"name": "S_ACCTBAL", "type": "float"},
+     {"name": "S_COMMENT", "type": "string"}
+ ]
+}
+
+//
+//
+// using avro tools to compile avsc files
+java -jar /opt/flink/avro-tools-1.7.7.jar compile schema customer.avsc /opt/flink/lib/
+//using javac to make classes of avsc javas
+javac -classpath "/opt/flink/lib/*:." Customer.java
+//using jar to make POJO of avsc classes
+jar cvf Customer.jar *.class
+
+//
+//change JVM in a way to let flink use memory efficientlly
+export JAVA_OPTS=-XX:-UseGCOverheadLimit
+export JAVA_TOOL_OPTIONS=-XX:-UseGCOverheadLimit
+
+//
+//config properties in flink-conf.yaml
+jobmanager.heap.size: 8192m
+taskmanager.heap.size: 8192m
+taskmanager.memory.size: 16384m
+taskmanager.memory.segment-size: 64kb
+taskmanager.memory.fraction: 0.8
+taskmanager.numberOfTaskSlots: 1660
+restart-strategy: fixed-delay
+parallelism.default: 1
+akka.ask.timeout: 1000000ms
+web.timeout: 1000000
+
+//
+//
+//basic code in scala start-scala-shell.sh
+
+//
+//define pathes to avro datasets
+val path_nation = new Path("hdfs://namenode:8020/mamghaderi_data/nation.avro")
+val path_region = new Path("hdfs://namenode:8020/mamghaderi_data/region.avro")
+val path_supplier = new Path("hdfs://namenode:8020/mamghaderi_data/supplier.avro")
+val path_part = new Path("hdfs://namenode:8020/mamghaderi_data/part.avro")
+val path_partsupp = new Path("hdfs://namenode:8020/mamghaderi_data/partsupp.avro")
+val path_customer = new Path("hdfs://namenode:8020/mamghaderi_data/customer.avro")
+val path_lineitem = new Path("hdfs://namenode:8020/mamghaderi_data/lineitem.avro")
+val path_orders = new Path("hdfs://namenode:8020/mamghaderi_data/orders.avro")
+
+//
+//define format for files
+val nation_format = new org.apache.flink.formats.avro.AvroInputFormat(path_nation, classOf[Nation])
+val region_format = new org.apache.flink.formats.avro.AvroInputFormat(path_region, classOf[Region])
+val supplier_format = new org.apache.flink.formats.avro.AvroInputFormat(path_supplier, classOf[Supplier])
+val part_format = new org.apache.flink.formats.avro.AvroInputFormat(path_part, classOf[Part])
+val partsupp_format = new org.apache.flink.formats.avro.AvroInputFormat(path_partsupp, classOf[Partsupp])
+val customer_format = new org.apache.flink.formats.avro.AvroInputFormat(path_customer, classOf[Customer])
+val lineitem_format = new org.apache.flink.formats.avro.AvroInputFormat(path_lineitem, classOf[Lineitem])
+val orders_format = new org.apache.flink.formats.avro.AvroInputFormat(path_orders, classOf[Orders])
+
+//
+//define data streams with formats
+val stream_nation = benv.createInput(nation_format)
+val stream_region = benv.createInput(region_format)
+val stream_supplier = benv.createInput(supplier_format)
+val stream_part = benv.createInput(part_format)
+val stream_partsupp = benv.createInput(partsupp_format)
+val stream_customer = benv.createInput(customer_format)
+val stream_lineitem = benv.createInput(lineitem_format)
+val stream_orders = benv.createInput(orders_format)
+
+//
+//make a table envirement 
+val table_env = org.apache.flink.table.api.TableEnvironment.getTableEnvironment(benv)
+
+//
+//use table envirement for data streams
+val nation = table_env.fromDataSet(stream_nation)
+val region = table_env.fromDataSet(stream_region)
+val supplier = table_env.fromDataSet(stream_supplier)
+val part = table_env.fromDataSet(stream_part)
+val partsupp = table_env.fromDataSet(stream_partsupp)
+val customer = table_env.fromDataSet(stream_customer)
+val lineitem = table_env.fromDataSet(stream_lineitem)
+val orders = table_env.fromDataSet(stream_orders)
+
+//!!!
+//when trying to run queries, various errors about concurrency control problem has been accured :(
